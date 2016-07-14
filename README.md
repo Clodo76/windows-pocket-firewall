@@ -8,7 +8,7 @@ Pocket Firewall for Windows (Vista and above, no XP)
 - Requires Administrator privileges and .NET 4
 - 32 bit and 64 bit edition
 
-![Screenshot](http://www.clodo.it/host/images/8150ddad8692552a94e5c96eedef7024101309b6.png)
+![Screenshot](https://raw.githubusercontent.com/Clodo76/windows-pocket-firewall/master/shot1.png)
 
 Maded for AirVPN Community
 https://airvpn.org/
