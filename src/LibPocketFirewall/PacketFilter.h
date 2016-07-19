@@ -45,6 +45,7 @@ std::string createGUIDString();
 GUID m_subLayerGUID;
 
 std::string lastError;
+UINT32 lastErrorCode;
 std::string subLayerName;
 std::wstring subLayerWName;
 std::wstring serviceWName;
@@ -69,7 +70,6 @@ extern "C" { __declspec(dllexport) BOOL LibPocketFirewallRemoveRule(const UINT64
 extern "C" { __declspec(dllexport) BOOL LibPocketFirewallRemoveRuleDirect(const UINT64 id); }
 
 extern "C" { __declspec(dllexport) const char* LibPocketFirewallGetLastError(); }
-
-extern "C" { __declspec(dllexport) UINT64 LibPocketFirewallTest(); }
+extern "C" { __declspec(dllexport) DWORD LibPocketFirewallGetLastErrorCode(); }
 
 #endif

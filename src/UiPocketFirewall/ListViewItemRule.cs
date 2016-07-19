@@ -94,13 +94,14 @@ namespace UiPocketFirewall
             {
                 XmlElement xmlClone = Xml.CloneNode(true) as XmlElement;
                 xmlClone.SetAttribute("layer", layer);
-                //xmlClone.SetAttribute("persistent", "true");           
+                if(Constants.PersistentMode)
+                    xmlClone.SetAttribute("persistent", "true");           
                 string xml = xmlClone.OuterXml;
                 UInt64 id1 = FormMain.LibPocketFirewallAddRule(xml);
 
                 if (id1 == 0)
                 {
-                    MessageBox.Show("Error in rule '" + Text + "': " + FormMain.LibPocketFirewallGetLastError2());
+                    Utils.MessageError("Error in rule '" + Text + "': " + FormMain.LibPocketFirewallGetLastError2());
                 }
                 else
                 {

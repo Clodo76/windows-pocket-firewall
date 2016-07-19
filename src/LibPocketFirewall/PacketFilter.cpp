@@ -76,7 +76,7 @@ std::string createGUIDString()
 }
 */
 
-DWORD BindInterface(const char* name, std::string weight)
+DWORD BindInterface(const char* name, std::string weight, bool persistent)
 {
     DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
     try
@@ -97,7 +97,8 @@ DWORD BindInterface(const char* name, std::string weight)
             SubLayer.displayData.name = &subLayerWName[0];
             SubLayer.displayData.description = &subLayerWName[0];
 			
-			SubLayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
+			if(persistent)
+				SubLayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
 			
 			//SubLayer.flags = 0;
 			SubLayer.weight = 0;
@@ -120,7 +121,7 @@ DWORD BindInterface(const char* name, std::string weight)
     catch(...)
     {
     }
-    return dwFwAPiRetCode;
+	return dwFwAPiRetCode;
 }
 
 DWORD UnbindInterface()
@@ -166,6 +167,7 @@ BOOL LibPocketFirewallStart(const char* xml)
     BOOL bStarted = FALSE;
 	std::string description;
 	std::string weight;
+	bool persistent = false;
 
 	std::string attrValue = "";
 	void *buf = malloc(XMLBUFSIZE);
@@ -179,6 +181,7 @@ BOOL LibPocketFirewallStart(const char* xml)
 		if (r < 0)
 		{
 			lastError = "XML syntax error";
+			lastErrorCode = 0;
 			return 0; // Syntax error
 		}
 
@@ -196,9 +199,12 @@ BOOL LibPocketFirewallStart(const char* xml)
 					description = attrValue;
 				else if (attrName == "weight")
 					weight = attrValue;
+				else if (attrName == "persistent")
+					persistent = (attrValue == "true");
 				else
 				{
 					lastError = "Unknown attribute '" + attrName + "'";
+					lastErrorCode = 0;
 					return 0;
 				}
 
@@ -211,20 +217,24 @@ BOOL LibPocketFirewallStart(const char* xml)
     {
 		lastError = "Failed to Create packet filter interface.";
         // Create packet filter interface.
-        if( ERROR_SUCCESS == CreateDeleteInterface( true ) )
+		lastErrorCode = CreateDeleteInterface(true);
+        if(lastErrorCode == ERROR_SUCCESS)
         {
 			lastError = "Failed to bind to packet filter interface.";
             // Bind to packet filter interface.
-            if( ERROR_SUCCESS == BindInterface( description.c_str(), weight.c_str()) )
+			lastErrorCode = BindInterface(description.c_str(), weight.c_str(), persistent);
+            if(lastErrorCode == ERROR_SUCCESS)
             {
             	lastError = "";
+				lastErrorCode = 0;
                 bStarted = TRUE;
-            }
+            }			
         }
     }
     catch(...)
     {
 		lastError = "Unexpected error.";
+		lastErrorCode = 0;
     }
     return bStarted;
 }
@@ -267,13 +277,16 @@ BOOL LibPocketFirewallStop()
 
 		lastError = "Failed to unbind from packet filter interface.";
         // Unbind from packet filter interface.
-        if( ERROR_SUCCESS == UnbindInterface() )
+		lastErrorCode = UnbindInterface();
+        if(lastErrorCode == ERROR_SUCCESS)
         {
 			lastError = "Failed to delete packet filter interface.";
+			lastErrorCode = CreateDeleteInterface(false);
             // Delete packet filter interface.
-            if( ERROR_SUCCESS == CreateDeleteInterface( false ) )
+            if(lastErrorCode == ERROR_SUCCESS)
             {
 				lastError = "";
+				lastErrorCode = 0;
                 bStopped = TRUE;
             }
         }
@@ -281,6 +294,7 @@ BOOL LibPocketFirewallStop()
     catch(...)
     {
 		lastError = "Unexpected error.";
+		lastErrorCode = 0;
     }
     return bStopped;
 }
@@ -326,6 +340,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 		if (r < 0)
 		{
 			lastError = "XML syntax error";
+			lastErrorCode = 0;
 			return 0; // Syntax error
 		}
 
@@ -358,6 +373,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 					if (attrValue != "true")
 					{
 						lastError = "Don't pass disabled rule.";
+						lastErrorCode = 0;
 						return 0;
 					}
 				}
@@ -378,6 +394,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 					else
 					{
 						lastError = "Unknown layer '" + attrValue + "'";
+						lastErrorCode = 0;
 						return 0;
 					}
 				}
@@ -394,6 +411,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 					else
 					{
 						lastError = "Unknown action '" + attrValue + "'";
+						lastErrorCode = 0;
 						return 0;
 					}
 				}
@@ -416,6 +434,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 				else
 				{
 					lastError = "Unknown attribute '" + attrName + "'";
+					lastErrorCode = 0;
 					return 0;
 				}
 			}
@@ -458,6 +477,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 					else
 					{
 						lastError = "Unknown field '" + attrValue + "'";
+						lastErrorCode = 0;
 						return 0;
 					};
 				}
@@ -514,6 +534,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 					else
 					{
 						lastError = "Unknown match '" + attrValue + "'";
+						lastErrorCode = 0;
 						return 0;
 					}
 				}
@@ -531,6 +552,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 						if (FwpmGetAppIdFromFileName0(wAttrValue.c_str(), &appblob) != ERROR_SUCCESS)
 						{
 							lastError = "App not found";
+							lastErrorCode = 0;
 							return 0;
 						}
 
@@ -540,6 +562,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 					else
 					{
 						lastError = "Unexpected 'path' attribute.";
+						lastErrorCode = 0;
 						return 0;
 					}
 				}
@@ -673,6 +696,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 									else
 									{
 										lastError = "Unable to obtain interface luid";
+										lastErrorCode = 0;
 										return 0;
 									}
 
@@ -692,24 +716,28 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 						if (found == FALSE)
 						{
 							lastError = "Unknown interface ID '" + attrValue + "'";
+							lastErrorCode = 0;
 							return 0;
 						}
 					}
 					else
 					{
 						lastError = "Unexpected 'interface' attribute.";
+						lastErrorCode = 0;
 						return 0;
 					}
 				}
 				else
 				{
 					lastError = "Unknown attribute '" + attrName + "'";
+					lastErrorCode = 0;
 					return 0;
 				}
 			}
 			else
 			{
 				lastError = "Unknown element '" + elemName + "'";
+				lastErrorCode = 0;
 				return 0;
 			}
 
@@ -726,18 +754,19 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 	if (r < 0)
 	{
 		lastError = "XML syntax error";
+		lastErrorCode = 0;
 		return 0; // Syntax error
 	}
 
 	Filter.numFilterConditions = conditionIndex + 1;
 	
 	// Add filter condition to our interface. Save filter id in filterids.
-	dwFwAPiRetCode = ::FwpmFilterAdd0(m_hEngineHandle,
+	lastErrorCode = ::FwpmFilterAdd0(m_hEngineHandle,
 		&Filter,
 		NULL,
 		&filterId);
 
-	if (dwFwAPiRetCode != ERROR_SUCCESS)
+	if (lastErrorCode != ERROR_SUCCESS)
 	{
 		lastError = "WFP Error.";
 		return 0;
@@ -746,6 +775,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 	filterids.push_back(filterId);
 
 	lastError = "OK";
+	lastErrorCode = 0;
 	return filterId;
 }
 
@@ -762,25 +792,31 @@ BOOL LibPocketFirewallRemoveRule(const UINT64 id)
 	}
 
 	lastError = "Not found";
+	lastErrorCode = 0;
 	return FALSE;
 }
 
 BOOL LibPocketFirewallRemoveRuleDirect(const UINT64 id)
 {
-	DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
-	dwFwAPiRetCode = ::FwpmFilterDeleteById0(m_hEngineHandle, id);
+	lastErrorCode = ::FwpmFilterDeleteById0(m_hEngineHandle, id);
 
-	if (dwFwAPiRetCode != ERROR_SUCCESS)
+	if (lastErrorCode != ERROR_SUCCESS)
 	{
 		lastError = "WFP Error.";
 		return FALSE;
 	}
 
 	lastError = "OK";
+	lastErrorCode = 0;
 	return TRUE;
 }
 
 const char* LibPocketFirewallGetLastError()
 {
 	return lastError.c_str();
+}
+
+DWORD LibPocketFirewallGetLastErrorCode()
+{
+	return lastErrorCode;
 }

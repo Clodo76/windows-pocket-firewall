@@ -56,13 +56,15 @@ namespace UiPocketFirewall
         public static extern IntPtr LibPocketFirewallGetLastError();
 
         [DllImport("LibPocketFirewall.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr LibPocketFirewallTest();        
-
+        public static extern UInt32 LibPocketFirewallGetLastErrorCode();
 
         public static string LibPocketFirewallGetLastError2()
         {
             IntPtr result = LibPocketFirewallGetLastError();
             string s = Marshal.PtrToStringAnsi(result);
+            UInt32 code = LibPocketFirewallGetLastErrorCode();
+            if(code != 0)
+                s += " (0x" + code.ToString("x") + ")";
             return s;
         }
 
@@ -357,24 +359,37 @@ namespace UiPocketFirewall
                 XmlElement xmlInfo = xmlStart.CreateElement("firewall");
                 xmlInfo.SetAttribute("description", "PocketFirewall");
                 xmlInfo.SetAttribute("weight", Lang.GetKey("weight", cboWeight.Text));
+                if(Constants.PersistentMode)
+                    xmlInfo.SetAttribute("persistent", "true");
 
-                if (LibPocketFirewallStart(xmlInfo.OuterXml))
+                try
                 {
-                    ClearRules(Constants.WfpName);
-
-                    foreach (ListViewItemRule listViewItem in lstRules.Items)
+                    if (LibPocketFirewallStart(xmlInfo.OuterXml))
                     {
-                        if (listViewItem.Xml.GetAttribute("enabled") != "true")
-                            continue;
+                        ClearRules(Constants.WfpName);
 
-                        listViewItem.FirewallEnable();                        
+                        foreach (ListViewItemRule listViewItem in lstRules.Items)
+                        {
+                            if (listViewItem.Xml.GetAttribute("enabled") != "true")
+                                continue;
+
+                            listViewItem.FirewallEnable();
+                        }
+
+                        UpdateRules();
+
+                        m_started = true;
+                        cmdStartStop.Text = "Running. Click to stop";
+                        cmdStartStop.BackColor = Color.DarkGreen;
                     }
-
-                    UpdateRules();
-
-                    m_started = true;
-                    cmdStartStop.Text = "Running. Click to stop";
-                    cmdStartStop.BackColor = Color.DarkGreen;
+                    else
+                    {
+                        throw new Exception("Unable to start: " + FormMain.LibPocketFirewallGetLastError2());                        
+                    }
+                }
+                catch(Exception e)
+                {
+                    Utils.MessageError(e.Message);
                 }
             }
         }
