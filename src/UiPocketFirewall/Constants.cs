@@ -29,10 +29,6 @@ namespace UiPocketFirewall
         public static string AppName = "Windows Pocket Firewall";
         public static string WfpName = "PocketFirewall-da9274bcecd082c202d71ffa3b50c2c115b3b7e1";
         public static string Version = "0.1 Alpha";
-        public static int VersionNumber = 1;
-
-        // TOFIX: Persistent mode give a fatal error if executed on Windows 7. Works with Windows 8.1 and above. Still unknown issue.
-        // https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/006cd03a-1f7b-402f-86ed-6ab96cd9f0d7/fwpmsublayerflagpersistent-cause-fwpedynamicsessioninprogress-only-in-win7?forum=wfp
-        public static bool PersistentMode = false;        
+        public static int VersionNumber = 1;        
     }
 }

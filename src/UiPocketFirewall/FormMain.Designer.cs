@@ -57,6 +57,8 @@
             this.label7 = new System.Windows.Forms.Label();
             this.txtDescription = new System.Windows.Forms.TextBox();
             this.lblDescription = new System.Windows.Forms.Label();
+            this.chkDynamic = new System.Windows.Forms.CheckBox();
+            this.chkPersistent = new System.Windows.Forms.CheckBox();
             columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.mnuMain.SuspendLayout();
             this.SuspendLayout();
@@ -150,7 +152,7 @@
             // 
             this.mnuFileNew.Name = "mnuFileNew";
             this.mnuFileNew.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
-            this.mnuFileNew.Size = new System.Drawing.Size(152, 22);
+            this.mnuFileNew.Size = new System.Drawing.Size(146, 22);
             this.mnuFileNew.Text = "&New";
             this.mnuFileNew.Click += new System.EventHandler(this.mnuFileNew_Click);
             // 
@@ -158,7 +160,7 @@
             // 
             this.mnuFileOpen.Name = "mnuFileOpen";
             this.mnuFileOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.mnuFileOpen.Size = new System.Drawing.Size(152, 22);
+            this.mnuFileOpen.Size = new System.Drawing.Size(146, 22);
             this.mnuFileOpen.Text = "&Open";
             this.mnuFileOpen.Click += new System.EventHandler(this.mnuFileOpen_Click);
             // 
@@ -166,7 +168,7 @@
             // 
             this.mnuFileSave.Name = "mnuFileSave";
             this.mnuFileSave.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.mnuFileSave.Size = new System.Drawing.Size(152, 22);
+            this.mnuFileSave.Size = new System.Drawing.Size(146, 22);
             this.mnuFileSave.Text = "&Save";
             this.mnuFileSave.Click += new System.EventHandler(this.mnuFileSave_Click);
             // 
@@ -174,20 +176,20 @@
             // 
             this.mnuFileSaveAs.Name = "mnuFileSaveAs";
             this.mnuFileSaveAs.ShortcutKeys = System.Windows.Forms.Keys.F6;
-            this.mnuFileSaveAs.Size = new System.Drawing.Size(152, 22);
+            this.mnuFileSaveAs.Size = new System.Drawing.Size(146, 22);
             this.mnuFileSaveAs.Text = "Save &As";
             this.mnuFileSaveAs.Click += new System.EventHandler(this.mnuFileSaveAs_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(143, 6);
             // 
             // mnuFileExit
             // 
             this.mnuFileExit.Name = "mnuFileExit";
             this.mnuFileExit.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
-            this.mnuFileExit.Size = new System.Drawing.Size(152, 22);
+            this.mnuFileExit.Size = new System.Drawing.Size(146, 22);
             this.mnuFileExit.Text = "&Exit";
             this.mnuFileExit.Click += new System.EventHandler(this.mnuFileExit_Click);
             // 
@@ -323,11 +325,37 @@
             this.lblDescription.Text = "Name:";
             this.lblDescription.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
+            // chkDynamic
+            // 
+            this.chkDynamic.AutoSize = true;
+            this.chkDynamic.Checked = true;
+            this.chkDynamic.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkDynamic.Location = new System.Drawing.Point(15, 419);
+            this.chkDynamic.Name = "chkDynamic";
+            this.chkDynamic.Size = new System.Drawing.Size(289, 19);
+            this.chkDynamic.TabIndex = 24;
+            this.chkDynamic.Text = "Dynamic - Rules dropped if this program is closed";
+            this.chkDynamic.UseVisualStyleBackColor = true;
+            this.chkDynamic.Visible = false;
+            // 
+            // chkPersistent
+            // 
+            this.chkPersistent.AutoSize = true;
+            this.chkPersistent.Location = new System.Drawing.Point(359, 419);
+            this.chkPersistent.Name = "chkPersistent";
+            this.chkPersistent.Size = new System.Drawing.Size(207, 19);
+            this.chkPersistent.TabIndex = 25;
+            this.chkPersistent.Text = "Persistent - Rules survive at reboot";
+            this.chkPersistent.UseVisualStyleBackColor = true;
+            this.chkPersistent.Visible = false;
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(780, 448);
+            this.Controls.Add(this.chkPersistent);
+            this.Controls.Add(this.chkDynamic);
             this.Controls.Add(this.cboWeight);
             this.Controls.Add(this.label7);
             this.Controls.Add(this.txtDescription);
@@ -381,6 +409,8 @@
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox txtDescription;
         private System.Windows.Forms.Label lblDescription;
+        private System.Windows.Forms.CheckBox chkDynamic;
+        private System.Windows.Forms.CheckBox chkPersistent;
     }
 }
 

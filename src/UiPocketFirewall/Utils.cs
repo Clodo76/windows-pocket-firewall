@@ -68,6 +68,11 @@ namespace UiPocketFirewall
             return Constants.AppName + " - " + title;
         }
 
+        public static void MessageInfo(string message)
+        {
+            MessageBox.Show(message, GetWindowTitle("Info"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
         public static void MessageError(string message)
         {
             MessageBox.Show(message, GetWindowTitle("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);

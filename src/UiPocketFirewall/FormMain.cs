@@ -34,6 +34,8 @@ namespace UiPocketFirewall
 {
     public partial class FormMain : Form
     {
+        public static FormMain Instance;
+
         [DllImport("LibPocketFirewall.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void LibPocketFirewallInit(string name);
 
@@ -70,9 +72,11 @@ namespace UiPocketFirewall
 
         private string m_path = "";
         private bool m_started = false;
-
+        
         public FormMain()
         {
+            Instance = this;
+
             InitializeComponent();                        
         }
 
@@ -359,8 +363,10 @@ namespace UiPocketFirewall
                 XmlElement xmlInfo = xmlStart.CreateElement("firewall");
                 xmlInfo.SetAttribute("description", "PocketFirewall");
                 xmlInfo.SetAttribute("weight", Lang.GetKey("weight", cboWeight.Text));
-                if(Constants.PersistentMode)
-                    xmlInfo.SetAttribute("persistent", "true");
+
+                xmlInfo.SetAttribute("persistent", chkPersistent.Checked ? "true" : "false");
+
+                xmlInfo.SetAttribute("dynamic", chkDynamic.Checked ? "true" : "false");
 
                 try
                 {
@@ -414,6 +420,15 @@ namespace UiPocketFirewall
             cmdStartStop.BackColor = Color.Red;
         }
 
+        public UInt64 AddRule(XmlElement xml)
+        {
+            xml.SetAttribute("persistent", chkPersistent.Checked ? "true" : "false");
+
+            string xmlStr = xml.OuterXml;
+
+            return FormMain.LibPocketFirewallAddRule(xmlStr);
+        }
+
         private bool RuleEdit(ListViewItemRule listViewItem)
         {            
             FormRule form = new FormRule();
@@ -456,6 +471,7 @@ namespace UiPocketFirewall
             string output = p.StandardOutput.ReadToEnd();
             p.WaitForExit();
 
+            int nClean = 0;
             System.Xml.XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.Load(path);
             foreach(XmlElement xmlFilter in xmlDoc.DocumentElement.GetElementsByTagName("filters"))
@@ -472,15 +488,17 @@ namespace UiPocketFirewall
                                 ulong id;
                                 if(ulong.TryParse(xmlFilterId.InnerText, out id))
                                 {
-                                    bool result = LibPocketFirewallRemoveRuleDirect(id);                                    
+                                    bool result = LibPocketFirewallRemoveRuleDirect(id);
+                                    nClean++;
                                 }
                             }                                
                         }
                     }
                 }
             }
-            
-            
+
+            if (nClean > 0)
+                Utils.MessageError("N. " + nClean + " rule pending and removed.");
 
             File.Delete(path);
         }

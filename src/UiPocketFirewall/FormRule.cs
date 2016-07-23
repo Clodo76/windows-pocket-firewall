@@ -50,7 +50,7 @@ namespace UiPocketFirewall
             cboLayer.Items.Add(Lang.GetText("layer", "ale_auth_recv_accept_v4"));
             cboLayer.Items.Add(Lang.GetText("layer", "ale_auth_recv_accept_v6"));
             cboLayer.Items.Add(Lang.GetText("layer", "ale_auth_connect_v4"));
-            cboLayer.Items.Add(Lang.GetText("layer", "ale_auth_connect_v4"));
+            cboLayer.Items.Add(Lang.GetText("layer", "ale_auth_connect_v6"));
             cboLayer.Items.Add(Lang.GetText("layer", "ale_flow_established_v4"));
             cboLayer.Items.Add(Lang.GetText("layer", "ale_flow_established_v6"));
 

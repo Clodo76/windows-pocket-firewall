@@ -93,15 +93,16 @@ namespace UiPocketFirewall
             foreach(string layer in layers)
             {
                 XmlElement xmlClone = Xml.CloneNode(true) as XmlElement;
-                xmlClone.SetAttribute("layer", layer);
-                if(Constants.PersistentMode)
-                    xmlClone.SetAttribute("persistent", "true");           
-                string xml = xmlClone.OuterXml;
-                UInt64 id1 = FormMain.LibPocketFirewallAddRule(xml);
+                xmlClone.SetAttribute("layer", layer);                
+                UInt64 id1 = FormMain.Instance.AddRule(xmlClone);
 
                 if (id1 == 0)
                 {
-                    Utils.MessageError("Error in rule '" + Text + "': " + FormMain.LibPocketFirewallGetLastError2());
+                    string errorCode = FormMain.LibPocketFirewallGetLastError2();
+
+                    if (errorCode == "WFP Error. (0x80320027)")
+                        errorCode = "Value of a condition not compatible with the rule or layer. " + errorCode;
+                    Utils.MessageError("Error in rule '" + Text + "' for layer '" + Xml.GetAttribute("layer") + "': " + errorCode);
                 }
                 else
                 {

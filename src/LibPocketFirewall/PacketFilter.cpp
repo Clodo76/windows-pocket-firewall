@@ -32,37 +32,44 @@
 /******************************************************************************
 CreateDeleteInterface - This method creates or deletes a packet filter interface.
 *******************************************************************************/
-DWORD CreateDeleteInterface( bool bCreate )
+DWORD InterfaceCreate(bool bDynamic)
 {
     DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
     try
     {
-        if( bCreate )
-        {
-			FWPM_SESSION0 session = {0};
+        FWPM_SESSION0 session = {0};
+		if(bDynamic)
 			session.flags = FWPM_SESSION_FLAG_DYNAMIC;
 
-            // Create packet filter interface.
-            dwFwAPiRetCode =  ::FwpmEngineOpen0( NULL,
-                                                 RPC_C_AUTHN_WINNT,
-                                                 NULL,
-                                                 &session,
-                                                 &m_hEngineHandle );
-        }
-        else
-        {
-            if( NULL != m_hEngineHandle )
-            {
-                // Close packet filter interface.
-                dwFwAPiRetCode = ::FwpmEngineClose0( m_hEngineHandle );
-                m_hEngineHandle = NULL;
-            }
-        }
+        // Create packet filter interface.
+        dwFwAPiRetCode =  ::FwpmEngineOpen0( NULL,
+                                                RPC_C_AUTHN_WINNT,
+                                                NULL,
+                                                &session,
+                                                &m_hEngineHandle );        
     }
     catch(...)
     {
     }
     return dwFwAPiRetCode;
+}
+
+DWORD InterfaceDelete()
+{
+	DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
+	try
+	{
+		if (NULL != m_hEngineHandle)
+		{
+			// Close packet filter interface.
+			dwFwAPiRetCode = ::FwpmEngineClose0(m_hEngineHandle);
+			m_hEngineHandle = NULL;
+		}		
+	}
+	catch (...)
+	{
+	}
+	return dwFwAPiRetCode;
 }
 
 /*
@@ -168,6 +175,7 @@ BOOL LibPocketFirewallStart(const char* xml)
 	std::string description;
 	std::string weight;
 	bool persistent = false;
+	bool dynamic = false;
 
 	std::string attrValue = "";
 	void *buf = malloc(XMLBUFSIZE);
@@ -201,6 +209,8 @@ BOOL LibPocketFirewallStart(const char* xml)
 					weight = attrValue;
 				else if (attrName == "persistent")
 					persistent = (attrValue == "true");
+				else if (attrName == "dynamic")
+					dynamic = (attrValue == "true");
 				else
 				{
 					lastError = "Unknown attribute '" + attrName + "'";
@@ -217,7 +227,7 @@ BOOL LibPocketFirewallStart(const char* xml)
     {
 		lastError = "Failed to Create packet filter interface.";
         // Create packet filter interface.
-		lastErrorCode = CreateDeleteInterface(true);
+		lastErrorCode = InterfaceCreate(dynamic);
         if(lastErrorCode == ERROR_SUCCESS)
         {
 			lastError = "Failed to bind to packet filter interface.";
@@ -281,7 +291,7 @@ BOOL LibPocketFirewallStop()
         if(lastErrorCode == ERROR_SUCCESS)
         {
 			lastError = "Failed to delete packet filter interface.";
-			lastErrorCode = CreateDeleteInterface(false);
+			lastErrorCode = InterfaceDelete();
             // Delete packet filter interface.
             if(lastErrorCode == ERROR_SUCCESS)
             {
