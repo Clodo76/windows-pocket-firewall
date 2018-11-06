@@ -41,8 +41,12 @@ namespace UiPocketFirewall
             SubItems[1].Text = Lang.GetText("match", match);
 
             string value = "";
-            if (field == "ip_remote_address")
-                value = Xml.GetAttribute("address") + "/" + Xml.GetAttribute("mask");
+			if ((field == "ip_remote_address") || (field == "ip_local_address"))
+			{
+				value = Xml.GetAttribute("address");
+				if (Xml.GetAttribute("mask") != "")
+					value += "/" + Xml.GetAttribute("mask");
+			}	
             else if (field == "ip_remote_port")
             {
                 if (match == "range")
@@ -56,8 +60,6 @@ namespace UiPocketFirewall
                 value = Xml.GetAttribute("protocol");
             else if (field == "ip_local_interface")
                 value = Utils.GetTextFromNetworkInterface(Xml.GetAttribute("interface"));
-            else if (field == "ip_local_address")
-                value = Xml.GetAttribute("address") + "/" + Xml.GetAttribute("mask");
             else if (field == "ip_local_port")
             {
                 if (match == "range")

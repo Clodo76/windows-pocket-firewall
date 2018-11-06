@@ -72,4 +72,5 @@ extern "C" { __declspec(dllexport) BOOL LibPocketFirewallRemoveRuleDirect(const 
 extern "C" { __declspec(dllexport) const char* LibPocketFirewallGetLastError(); }
 extern "C" { __declspec(dllexport) DWORD LibPocketFirewallGetLastErrorCode(); }
 
+
 #endif

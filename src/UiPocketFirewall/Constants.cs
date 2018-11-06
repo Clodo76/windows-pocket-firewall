@@ -28,7 +28,7 @@ namespace UiPocketFirewall
     {
         public static string AppName = "Windows Pocket Firewall";
         public static string WfpName = "PocketFirewall-da9274bcecd082c202d71ffa3b50c2c115b3b7e1";
-        public static string Version = "0.1 Alpha";
+        public static string Version = "0.2 Beta";
         public static int VersionNumber = 1;        
     }
 }

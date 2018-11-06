@@ -112,8 +112,17 @@ namespace UiPocketFirewall
 
                 if (field == "ip_remote_address")
                 {
-                    Xml.SetAttribute("address", txtAddressIp.Text);
-                    Xml.SetAttribute("mask", txtAddressMask.Text);
+					int posSlash = txtAddressIp.Text.IndexOf("/");
+					if (posSlash != -1)
+					{
+						Xml.SetAttribute("address", txtAddressIp.Text.Substring(0,posSlash));
+						Xml.SetAttribute("mask", txtAddressIp.Text.Substring(posSlash+1));
+					}
+					else
+					{
+						Xml.SetAttribute("address", txtAddressIp.Text);
+						Xml.SetAttribute("mask", "");
+					}
                 }
                 else if (field == "ip_remote_port")
                 {
@@ -149,9 +158,18 @@ namespace UiPocketFirewall
                 }
                 if (field == "ip_local_address")
                 {
-                    Xml.SetAttribute("address", txtAddressIp.Text);
-                    Xml.SetAttribute("mask", txtAddressMask.Text);
-                }
+					int posSlash = txtAddressIp.Text.IndexOf("/");
+					if (posSlash != -1)
+					{
+						Xml.SetAttribute("address", txtAddressIp.Text.Substring(0, posSlash));
+						Xml.SetAttribute("mask", txtAddressIp.Text.Substring(posSlash + 1));
+					}
+					else
+					{
+						Xml.SetAttribute("address", txtAddressIp.Text);
+						Xml.SetAttribute("mask", "");
+					}
+				}
                 else if (field == "ip_local_port")
                 {
                     if (match == "range")
@@ -220,11 +238,10 @@ namespace UiPocketFirewall
                      (field == "ip_remote_address") )
             {
                 tabValue.SelectedTab = tabValueAddress;
-
+								
                 txtAddressIp.Text = Xml.GetAttribute("address");
-                txtAddressMask.Text = Xml.GetAttribute("mask");
-                if (txtAddressMask.Text == "")
-                    txtAddressMask.Text = "255.255.255.255";
+				if (Xml.GetAttribute("mask") != "")
+					txtAddressIp.Text += "/" + Xml.GetAttribute("mask");					
             }
             else if(field == "ale_app_id")
             {

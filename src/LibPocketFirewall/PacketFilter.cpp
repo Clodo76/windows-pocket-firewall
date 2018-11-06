@@ -18,11 +18,17 @@
 
 #include "stdafx.h"
 #include "PacketFilter.h"
-#include <iphlpapi.h>
 #include <time.h>
 #include "yxml.h"
 #include <Objbase.h>
 #include <Ws2tcpip.h>
+#include <sstream>
+#include <ws2def.h>
+#include <ws2ipdef.h>
+#include <iphlpapi.h>
+#include <map>
+
+
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "fwpuclnt.lib")
 #pragma comment(lib, "rpcrt4.lib")
@@ -30,28 +36,28 @@
 #define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
 
 /******************************************************************************
-CreateDeleteInterface - This method creates or deletes a packet filter interface.
+WFP - CreateDeleteInterface - This method creates or deletes a packet filter interface.
 *******************************************************************************/
 DWORD InterfaceCreate(bool bDynamic)
 {
-    DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
-    try
-    {
-        FWPM_SESSION0 session = {0};
-		if(bDynamic)
+	DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
+	try
+	{
+		FWPM_SESSION0 session = { 0 };
+		if (bDynamic)
 			session.flags = FWPM_SESSION_FLAG_DYNAMIC;
 
-        // Create packet filter interface.
-        dwFwAPiRetCode =  ::FwpmEngineOpen0( NULL,
-                                                RPC_C_AUTHN_WINNT,
-                                                NULL,
-                                                &session,
-                                                &m_hEngineHandle );        
-    }
-    catch(...)
-    {
-    }
-    return dwFwAPiRetCode;
+		// Create packet filter interface.
+		dwFwAPiRetCode = ::FwpmEngineOpen0(NULL,
+			RPC_C_AUTHN_WINNT,
+			NULL,
+			&session,
+			&m_hEngineHandle);
+	}
+	catch (...)
+	{
+	}
+	return dwFwAPiRetCode;
 }
 
 DWORD InterfaceDelete()
@@ -64,7 +70,7 @@ DWORD InterfaceDelete()
 			// Close packet filter interface.
 			dwFwAPiRetCode = ::FwpmEngineClose0(m_hEngineHandle);
 			m_hEngineHandle = NULL;
-		}		
+		}
 	}
 	catch (...)
 	{
@@ -72,62 +78,51 @@ DWORD InterfaceDelete()
 	return dwFwAPiRetCode;
 }
 
-/*
-std::string createGUIDString()
-{
-	GUID guid = { 0 };
-	char szGuid[40] = { 0 };
-	CoCreateGuid(&guid);
-	sprintf_s(szGuid, "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-	return szGuid;
-}
-*/
-
 DWORD BindInterface(const char* name, std::string weight, bool persistent)
 {
-    DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
-    try
-    {
-        RPC_STATUS rpcStatus = {0};
-        FWPM_SUBLAYER0 SubLayer = {0};
+	DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
+	try
+	{
+		RPC_STATUS rpcStatus = { 0 };
+		FWPM_SUBLAYER0 SubLayer = { 0 };
 
-        // Create a GUID for our packet filter layer.
-        rpcStatus = ::UuidCreate( &SubLayer.subLayerKey );
-        if( NO_ERROR == rpcStatus )
-        {
-            // Save GUID.
-            ::CopyMemory( &m_subLayerGUID,
-                            &SubLayer.subLayerKey,
-                            sizeof( SubLayer.subLayerKey ) );
+		// Create a GUID for our packet filter layer.
+		rpcStatus = ::UuidCreate(&SubLayer.subLayerKey);
+		if (NO_ERROR == rpcStatus)
+		{
+			// Save GUID.
+			::CopyMemory(&m_subLayerGUID,
+				&SubLayer.subLayerKey,
+				sizeof(SubLayer.subLayerKey));
 
-            // Populate packet filter layer information.
-            SubLayer.displayData.name = &subLayerWName[0];
-            SubLayer.displayData.description = &subLayerWName[0];
-			
-			if(persistent)
+			// Populate packet filter layer information.
+			SubLayer.displayData.name = &subLayerWName[0];
+			SubLayer.displayData.description = &subLayerWName[0];
+
+			if (persistent)
 				SubLayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
-			
+
 			//SubLayer.flags = 0;
 			SubLayer.weight = 0;
 
 			if (weight == "auto")
 				SubLayer.weight = 0x100;
-			else if(weight == "max")
+			else if (weight == "max")
 				SubLayer.weight = maxSubLayerWeight;
 			else
 			{
 				SubLayer.weight = atoi(weight.c_str());
 			}
 
-            // Add packet filter to our interface.
-            dwFwAPiRetCode = ::FwpmSubLayerAdd0( m_hEngineHandle,
-                                                    &SubLayer,
-                                                    NULL );
-        }        
-    }
-    catch(...)
-    {
-    }
+			// Add packet filter to our interface.
+			dwFwAPiRetCode = ::FwpmSubLayerAdd0(m_hEngineHandle,
+				&SubLayer,
+				NULL);
+		}
+	}
+	catch (...)
+	{
+	}
 	return dwFwAPiRetCode;
 }
 
@@ -135,11 +130,11 @@ DWORD UnbindInterface()
 {
 	DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
 	try
-	{		
+	{
 		// Delete packet filter layer from our interface.
 		dwFwAPiRetCode = ::FwpmSubLayerDeleteByKey0(m_hEngineHandle,
 			&m_subLayerGUID);
-		::ZeroMemory(&m_subLayerGUID, sizeof(GUID));		
+		::ZeroMemory(&m_subLayerGUID, sizeof(GUID));
 	}
 	catch (...)
 	{
@@ -156,7 +151,6 @@ void LibPocketFirewallInit(const char* name)
 		::ZeroMemory(&m_subLayerGUID, sizeof(GUID));
 
 		std::string fullName = name;
-		// fullName += "-" + createGUIDString();		
 
 		std::wstring fullWName(fullName.begin(), fullName.end());
 
@@ -171,7 +165,7 @@ void LibPocketFirewallInit(const char* name)
 
 BOOL LibPocketFirewallStart(const char* xml)
 {
-    BOOL bStarted = FALSE;
+	BOOL bStarted = FALSE;
 	std::string description;
 	std::string weight;
 	bool persistent = false;
@@ -182,8 +176,8 @@ BOOL LibPocketFirewallStart(const char* xml)
 	yxml_t x;
 	yxml_init(&x, buf, XMLBUFSIZE);
 	const char* xmlE = xml;
-		
-	for (; *xmlE; xmlE++) 
+
+	for (; *xmlE; xmlE++)
 	{
 		yxml_ret_t r = yxml_parse(&x, *xmlE);
 		if (r < 0)
@@ -198,55 +192,55 @@ BOOL LibPocketFirewallStart(const char* xml)
 
 		switch (r)
 		{
-			case YXML_ATTREND:
+		case YXML_ATTREND:
+		{
+			std::string elemName = x.elem;
+			std::string attrName = x.attr;
+
+			if (attrName == "description")
+				description = attrValue;
+			else if (attrName == "weight")
+				weight = attrValue;
+			else if (attrName == "persistent")
+				persistent = (attrValue == "true");
+			else if (attrName == "dynamic")
+				dynamic = (attrValue == "true");
+			else
 			{
-				std::string elemName = x.elem;
-				std::string attrName = x.attr;
-
-				if (attrName == "description")
-					description = attrValue;
-				else if (attrName == "weight")
-					weight = attrValue;
-				else if (attrName == "persistent")
-					persistent = (attrValue == "true");
-				else if (attrName == "dynamic")
-					dynamic = (attrValue == "true");
-				else
-				{
-					lastError = "Unknown attribute '" + attrName + "'";
-					lastErrorCode = 0;
-					return 0;
-				}
-
-				attrValue = "";
+				lastError = "Unknown attribute '" + attrName + "'";
+				lastErrorCode = 0;
+				return 0;
 			}
+
+			attrValue = "";
+		}
 		}
 	}
 
-    try
-    {
+	try
+	{
 		lastError = "Failed to Create packet filter interface.";
-        // Create packet filter interface.
+		// Create packet filter interface.
 		lastErrorCode = InterfaceCreate(dynamic);
-        if(lastErrorCode == ERROR_SUCCESS)
-        {
+		if (lastErrorCode == ERROR_SUCCESS)
+		{
 			lastError = "Failed to bind to packet filter interface.";
-            // Bind to packet filter interface.
+			// Bind to packet filter interface.
 			lastErrorCode = BindInterface(description.c_str(), weight.c_str(), persistent);
-            if(lastErrorCode == ERROR_SUCCESS)
-            {
-            	lastError = "";
+			if (lastErrorCode == ERROR_SUCCESS)
+			{
+				lastError = "";
 				lastErrorCode = 0;
-                bStarted = TRUE;
-            }			
-        }
-    }
-    catch(...)
-    {
+				bStarted = TRUE;
+			}
+		}
+	}
+	catch (...)
+	{
 		lastError = "Unexpected error.";
 		lastErrorCode = 0;
-    }
-    return bStarted;
+	}
+	return bStarted;
 }
 
 HHOOK _hook;
@@ -272,42 +266,60 @@ LRESULT __stdcall HookCallback(int nCode, WPARAM wParam, LPARAM lParam)
 
 BOOL LibPocketFirewallStop()
 {
-    BOOL bStopped = FALSE;
-    try
-    {
+	BOOL bStopped = FALSE;
+	try
+	{
 		DWORD dwFwAPiRetCode = ERROR_BAD_COMMAND;
 
-        // Remove all filters.
-        
-		for (unsigned int i = 0; i < filterids.size(); i++) 
+		// Remove all filters.
+
+		for (unsigned int i = 0; i < filterids.size(); i++)
 		{
 			dwFwAPiRetCode = ::FwpmFilterDeleteById0(m_hEngineHandle, filterids[i]);
 		}
 		filterids.clear();
 
 		lastError = "Failed to unbind from packet filter interface.";
-        // Unbind from packet filter interface.
+		// Unbind from packet filter interface.
 		lastErrorCode = UnbindInterface();
-        if(lastErrorCode == ERROR_SUCCESS)
-        {
+		if (lastErrorCode == ERROR_SUCCESS)
+		{
 			lastError = "Failed to delete packet filter interface.";
 			lastErrorCode = InterfaceDelete();
-            // Delete packet filter interface.
-            if(lastErrorCode == ERROR_SUCCESS)
-            {
+			// Delete packet filter interface.
+			if (lastErrorCode == ERROR_SUCCESS)
+			{
 				lastError = "";
 				lastErrorCode = 0;
-                bStopped = TRUE;
-            }
-        }
-    }
-    catch(...)
-    {
+				bStopped = TRUE;
+			}
+		}
+	}
+	catch (...)
+	{
 		lastError = "Unexpected error.";
 		lastErrorCode = 0;
-    }
-    return bStopped;
+	}
+	return bStopped;
 }
+
+struct RuleData
+{
+	RuleData()
+	{
+		::ZeroMemory(&ipAddressV4, sizeof(FWP_V4_ADDR_AND_MASK));
+		::ZeroMemory(&ipAddressV6, sizeof(FWP_V6_ADDR_AND_MASK));
+		::ZeroMemory(&portRange, sizeof(FWP_RANGE0));
+		ipAddressV4.mask = ntohl(4294967295); // 255.255.255.255
+		ipAddressV6.prefixLength = 128;
+		filterWeight = 0;
+	}
+
+	FWP_V4_ADDR_AND_MASK ipAddressV4;
+	FWP_V6_ADDR_AND_MASK ipAddressV6;
+	FWP_RANGE0 portRange;
+	UINT64 filterWeight;
+};
 
 
 UINT64 LibPocketFirewallAddRule(const char* xml)
@@ -325,11 +337,11 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 	Filter.subLayerKey = m_subLayerGUID;
 	Filter.displayData.name = &serviceWName[0];
 	Filter.displayData.description = &serviceWName[0];
-	Filter.weight.type = FWP_EMPTY;	
+	Filter.weight.type = FWP_EMPTY;
 	Filter.numFilterConditions = 0;
 	Filter.filterCondition = Condition;
 	Filter.flags = FWPM_FILTER_FLAG_NONE;
-		
+
 	std::string attrValue = "";
 	void *buf = malloc(XMLBUFSIZE);
 	yxml_t x;
@@ -337,13 +349,9 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 	const char* xmlE = xml;
 
 	int conditionIndex = -1;
+	std::map<int, RuleData> rulesMap;
 
 	std::wstring ruleWName;
-
-	// Temporary vars for multiple value fields
-	FWP_V4_ADDR_AND_MASK ipAddress;
-	FWP_RANGE0 portRange;
-	UINT64 filterWeight;
 
 	for (; *xmlE; xmlE++) {
 		yxml_ret_t r = yxml_parse(&x, *xmlE);
@@ -363,7 +371,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 		{
 			std::string elemName = x.elem;
 			std::string attrName = x.attr;
-						
+
 			if (elemName == "rule")
 			{
 				if (attrName == "name")
@@ -427,7 +435,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 				}
 				else if (attrName == "weight")
 				{
-					if(attrValue == "auto")
+					if (attrValue == "auto")
 						Filter.weight.type = FWP_EMPTY;
 					else if (attrValue == "max")
 					{
@@ -436,9 +444,11 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 					}
 					else
 					{
+						RuleData &ruleData = rulesMap[conditionIndex];
+
 						Filter.weight.type = FWP_UINT64;
-						filterWeight = atoi(attrValue.c_str());
-						Filter.weight.uint64 = &filterWeight; // TODO : not sure if safe to retain pointer here
+						ruleData.filterWeight = atoi(attrValue.c_str());
+						Filter.weight.uint64 = &ruleData.filterWeight;
 					}
 				}
 				else
@@ -453,6 +463,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 				if (attrName == "field")
 				{
 					conditionIndex++;
+					rulesMap[conditionIndex] = RuleData();
 
 					// https://msdn.microsoft.com/en-us/library/windows/desktop/aa363996(v=vs.85).aspx
 
@@ -578,42 +589,105 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 				}
 				else if (attrName == "address")
 				{
-					UINT32 IpAddr;
-					inet_pton(AF_INET, attrValue.c_str(), &IpAddr);
-					ipAddress.addr = ntohl(IpAddr);
+					if ((Filter.layerKey == FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) ||
+						(Filter.layerKey == FWPM_LAYER_ALE_AUTH_CONNECT_V4) ||
+						(Filter.layerKey == FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4))
+					{
+						UINT32 IpAddr = 0;
+						if (!inet_pton(AF_INET, attrValue.c_str(), &IpAddr))
+						{
+							lastError = "inet_pton ipv4 address failed with '" + attrValue + "'";
+							lastErrorCode = 0;
+							return 0;
+						}
 
-					Condition[conditionIndex].conditionValue.type = FWP_V4_ADDR_MASK;
-					Condition[conditionIndex].conditionValue.v4AddrMask = &ipAddress;
+						RuleData &ruleData = rulesMap[conditionIndex];
+						ruleData.ipAddressV4.addr = ntohl(IpAddr);
+
+						Condition[conditionIndex].conditionValue.type = FWP_V4_ADDR_MASK;
+						Condition[conditionIndex].conditionValue.v4AddrMask = &ruleData.ipAddressV4;
+					}
+					else if ((Filter.layerKey == FWPM_LAYER_ALE_AUTH_CONNECT_V6) ||
+						(Filter.layerKey == FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6) ||
+						(Filter.layerKey == FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
+					{
+						in6_addr IpAddr6;
+						::ZeroMemory(&IpAddr6, sizeof(in6_addr));
+
+						if (!inet_pton(AF_INET6, attrValue.c_str(), &IpAddr6))
+						{
+							lastError = "inet_pton ipv6 address failed with '" + attrValue + "'";
+							lastErrorCode = 0;
+							return 0;
+						}
+
+						RuleData &ruleData = rulesMap[conditionIndex];
+						memcpy(&ruleData.ipAddressV6.addr, &IpAddr6.u.Byte, 16);
+
+						Condition[conditionIndex].conditionValue.type = FWP_V6_ADDR_MASK;
+						Condition[conditionIndex].conditionValue.v6AddrMask = &ruleData.ipAddressV6;
+					}
 				}
-				else if (attrName == "mask")
-				{	
-					UINT32 Mask;
-					inet_pton(AF_INET, attrValue.c_str(), &Mask);
-					ipAddress.mask = ntohl(Mask);
+				else if(attrName == "mask")
+				{
+					if(attrValue != "")
+					{
+						if ((Filter.layerKey == FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) ||
+							(Filter.layerKey == FWPM_LAYER_ALE_AUTH_CONNECT_V4) ||
+							(Filter.layerKey == FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4))
+						{
+							UINT32 Mask;
+							if (!inet_pton(AF_INET, attrValue.c_str(), &Mask))
+							{
+								lastError = "inet_pton ipv4 mask failed with '" + attrValue + "'";
+								lastErrorCode = 0;
+								return 0;
+							}
 
-					Condition[conditionIndex].conditionValue.type = FWP_V4_ADDR_MASK;
-					Condition[conditionIndex].conditionValue.v4AddrMask = &ipAddress;
+							RuleData &ruleData = rulesMap[conditionIndex];
+							ruleData.ipAddressV4.mask = ntohl(Mask);
+
+							Condition[conditionIndex].conditionValue.type = FWP_V4_ADDR_MASK;
+							Condition[conditionIndex].conditionValue.v4AddrMask = &ruleData.ipAddressV4;
+						}
+						else if ((Filter.layerKey == FWPM_LAYER_ALE_AUTH_CONNECT_V6) ||
+							(Filter.layerKey == FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6) ||
+							(Filter.layerKey == FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
+						{
+							UINT8 prefixLength = atoi(attrValue.c_str());
+
+							RuleData &ruleData = rulesMap[conditionIndex];
+							ruleData.ipAddressV6.prefixLength = prefixLength;
+
+							Condition[conditionIndex].conditionValue.type = FWP_V6_ADDR_MASK;
+							Condition[conditionIndex].conditionValue.v6AddrMask = &ruleData.ipAddressV6;
+						}
+					}
 				}
 				else if (attrName == "port_from")
 				{
-					portRange.valueLow.type = FWP_UINT16;
-					portRange.valueLow.uint16 = atoi(attrValue.c_str());
-					
+					RuleData &ruleData = rulesMap[conditionIndex];
+
+					ruleData.portRange.valueLow.type = FWP_UINT16;
+					ruleData.portRange.valueLow.uint16 = atoi(attrValue.c_str());
+
 					Condition[conditionIndex].conditionValue.type = FWP_RANGE_TYPE;
-					Condition[conditionIndex].conditionValue.rangeValue = &portRange;
+					Condition[conditionIndex].conditionValue.rangeValue = &ruleData.portRange;
 				}
 				else if (attrName == "port_to")
 				{
-					portRange.valueHigh.type = FWP_UINT16;
-					portRange.valueHigh.uint16 = atoi(attrValue.c_str());
+					RuleData &ruleData = rulesMap[conditionIndex];
+
+					ruleData.portRange.valueHigh.type = FWP_UINT16;
+					ruleData.portRange.valueHigh.uint16 = atoi(attrValue.c_str());
 
 					Condition[conditionIndex].conditionValue.type = FWP_RANGE_TYPE;
-					Condition[conditionIndex].conditionValue.rangeValue = &portRange;
+					Condition[conditionIndex].conditionValue.rangeValue = &ruleData.portRange;
 				}
 				else if (attrName == "protocol")
 				{
 					Condition[conditionIndex].conditionValue.type = FWP_UINT8;
-					if(attrValue == "tcp")					
+					if (attrValue == "tcp")
 						Condition[conditionIndex].conditionValue.uint8 = IPPROTO_TCP;
 					else if (attrValue == "udp")
 						Condition[conditionIndex].conditionValue.uint8 = IPPROTO_UDP;
@@ -628,6 +702,8 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 
 						BOOL found = FALSE;
 
+						//std::ostringstream log;
+
 						PIP_ADAPTER_ADDRESSES pAddresses = NULL;
 						PIP_ADAPTER_ADDRESSES pCurrAddresses = NULL;
 						ULONG outBufLen = 0;
@@ -636,8 +712,8 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 						ULONG family = AF_UNSPEC;
 						ULONG flags = GAA_FLAG_INCLUDE_PREFIX;
 
-						#define WORKING_BUFFER_SIZE 15000
-						#define MAX_TRIES 3
+#define WORKING_BUFFER_SIZE 15000
+#define MAX_TRIES 3
 
 						// Allocate a 15 KB buffer to start with.
 						outBufLen = WORKING_BUFFER_SIZE;
@@ -647,7 +723,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 							pAddresses = (IP_ADAPTER_ADDRESSES *)MALLOC(outBufLen);
 							if (pAddresses == NULL) {
 								printf
-									("Memory allocation failed for IP_ADAPTER_ADDRESSES struct\n");
+								("Memory allocation failed for IP_ADAPTER_ADDRESSES struct\n");
 								exit(1);
 							}
 
@@ -695,6 +771,9 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 										found = true;
 								}
 
+								//log << pCurrAddresses->AdapterName;
+								//log << "(" << pCurrAddresses->IfIndex << "," << pCurrAddresses->Ipv6IfIndex << "); ";
+
 								if (found)
 								{
 									NET_LUID tapluid;
@@ -725,7 +804,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 
 						if (found == FALSE)
 						{
-							lastError = "Unknown interface ID '" + attrValue + "'";
+							lastError = "Interface ID '" + attrValue + "' unknown or disabled for the layer.";
 							lastErrorCode = 0;
 							return 0;
 						}
@@ -769,7 +848,7 @@ UINT64 LibPocketFirewallAddRule(const char* xml)
 	}
 
 	Filter.numFilterConditions = conditionIndex + 1;
-	
+
 	// Add filter condition to our interface. Save filter id in filterids.
 	lastErrorCode = ::FwpmFilterAdd0(m_hEngineHandle,
 		&Filter,

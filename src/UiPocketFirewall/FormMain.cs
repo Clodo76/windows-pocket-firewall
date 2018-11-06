@@ -60,6 +60,9 @@ namespace UiPocketFirewall
         [DllImport("LibPocketFirewall.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern UInt32 LibPocketFirewallGetLastErrorCode();
 
+        [DllImport("LibPocketFirewall.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr LibPocketFirewallTest();
+
         public static string LibPocketFirewallGetLastError2()
         {
             IntPtr result = LibPocketFirewallGetLastError();
@@ -458,6 +461,9 @@ namespace UiPocketFirewall
         
         private void ClearRules(string WfpName)
         {
+            if (Utils.IsWin7OrNewer() == false) // "netsh.exe WFP" doesn't exists on Vista
+                return;
+
             string path = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xml";
 
             System.Diagnostics.Process p = new System.Diagnostics.Process();
@@ -502,6 +508,15 @@ namespace UiPocketFirewall
 
             File.Delete(path);
         }
-        
+
+        private void mnuHelpLog_Click(object sender, EventArgs e)
+        {
+            IntPtr result = LibPocketFirewallTest();
+            string s = Marshal.PtrToStringAnsi(result);
+
+            FormText dlg = new FormText();
+            dlg.Body = s;
+            dlg.ShowDialog();
+        }
     }
 }

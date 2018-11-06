@@ -1,4 +1,5 @@
 Pocket Firewall for Windows (Vista and above, no XP)
+v0.2 beta
 ===============
 
 - Doesn't require any driver installation
@@ -10,7 +11,11 @@ Pocket Firewall for Windows (Vista and above, no XP)
 
 ![Screenshot](https://raw.githubusercontent.com/Clodo76/windows-pocket-firewall/master/shot1.png)
 
+[Video demo](https://raw.githubusercontent.com/Clodo76/windows-pocket-firewall/master/shot1.mp4)
+
+Download: [64bit](https://github.com/Clodo76/windows-pocket-firewall/raw/master/Output/PocketFirewall64.zip) - [32bit](https://github.com/Clodo76/windows-pocket-firewall/raw/master/Output/PocketFirewall32.zip)
+
 Maded for AirVPN Community
 https://airvpn.org/
 
-Released under GPL3
+Released under GPLv3

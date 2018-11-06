@@ -77,6 +77,11 @@ namespace UiPocketFirewall
         {
             MessageBox.Show(message, GetWindowTitle("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-        
+
+        public static bool IsWin7OrNewer()
+        {
+            OperatingSystem OS = Environment.OSVersion;
+            return OS.Platform == PlatformID.Win32NT && (OS.Version.Major > 6 || (OS.Version.Major == 6 && OS.Version.Minor >= 1));
+        }
     }
 }
